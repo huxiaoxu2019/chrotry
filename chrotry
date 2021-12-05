@@ -1,0 +1,245 @@
+#!/Users/xu_hu/.pyenv/shims/python
+# TODO 1. Chinese 2. Render Last Line (Status)
+import os
+import time
+import curses
+import sqlite3
+import sys
+
+k = 0
+cursor_x = 0
+cursor_y = 0
+width = 0
+height = 0
+stdscr = None
+input_content = ""
+in_db = "{}/DB".format(os.path.split(os.path.realpath(__file__))[0])
+in_con = sqlite3.connect(in_db)
+in_cur = in_con.cursor()
+idx = {
+    "id": 0,
+    "url": 1,
+    "title": 2,
+    "visit_count": 3,
+    "typed_count": 4,
+    "last_visit_time": 5,
+    "hidden": 6,
+}
+last_rows = []
+time_width = 22
+url_width = 60
+title_width = 60
+highlight = 0
+result_count = 40
+result_pageidx = 0
+
+
+def draw_search_bar():
+    global input_content, stdscr, width, height, cursor_x, cursor_y, k, result_pageidx
+    # input title
+    input_title = "Type a Keyword >> "
+
+    # append char
+    if 32 <= k <= 126:
+        if len(input_content) + len(input_title) < width - 1:
+            input_content = input_content + chr(k)
+            result_pageidx = 0
+    # delete char
+    if 127 == k:
+        if len(input_content):
+            input_content = input_content[:-1]
+
+    input_str = padding(input_title + input_content, width - 1)
+    stdscr.attron(curses.color_pair(2))
+    stdscr.addstr(0, 0, input_str + " " * (width - len(input_str)))
+    stdscr.attroff(curses.color_pair(2))
+
+    # set cursor
+    cursor_x = len(input_str)
+
+
+def draw_result_block_title():
+    global width
+    desc_str = padding("--- Search Result Lists ", width)
+    stdscr.attron(curses.color_pair(1))
+    stdscr.addstr(1, 0, desc_str)
+    if width > len(desc_str):
+        stdscr.addstr(1, len(desc_str), "-" * (width - len(desc_str)))
+    stdscr.attroff(curses.color_pair(1))
+
+
+def padding(line, w):
+    if len(line) > w:
+        line = line[:w]
+    return line
+
+
+def _log(line):
+    global stdscr, height
+    stdscr.attron(curses.color_pair(1))
+    stdscr.addstr(height - 1, 0, line)
+    stdscr.attroff(curses.color_pair(1))
+
+
+def draw_result_block():
+    draw_result_block_title()
+    global input_content, stdscr, k, last_rows, title_width, url_width, time_width, width, highlight, result_count, height, result_pageidx
+
+    # chrl + u key
+    if k == 21:
+        result_pageidx = max(result_pageidx - 1, 0)
+
+    # ctrl + d key
+    if k == 4:
+        if len(last_rows) == result_count:
+            result_pageidx = result_pageidx + 1
+
+    # enter key
+    if k == 10 or True:
+        keywords = input_content.split(" ")
+        where = ""
+        params = []
+        for key in keywords:
+            if len(where) > 0:
+                where = where + "and "
+            where = where + "(url like ? or title like ?) "
+            params.append("%{}%".format(key))
+            params.append("%{}%".format(key))
+
+        params.append("{}".format(result_count * result_pageidx))
+        params.append("{}".format(result_count))
+
+        last_rows = in_cur.execute(
+            "select * from urls where {} order by last_visit_time desc limit ?,?".format(
+                where
+            ),
+            params,
+        ).fetchall()
+    cur_result_count = min(len(last_rows), height - 4)
+
+    # ctrl + n (down) key
+    if k == 14:
+        highlight = highlight + 1
+
+    # ctrl + p (up) key
+    if k == 16:
+        highlight = highlight - 1
+
+    highlight = max(highlight, 0)
+    highlight = min(highlight, cur_result_count - 1)
+
+    # header
+    # idx = {"id": 0, "url": 1, "title": 2, "visit_count": 3, "typed_count": 4, "last_visit_time": 5, "hidden": 6}
+    if len(last_rows) > 0:
+        header = (
+            "Last Visit Time"
+            + " " * (time_width - len("Last Visit Time"))
+            + "URL"
+            + " " * (url_width - len("URL"))
+            + "Title"
+            + " " * (title_width - len("Title"))
+        )
+        header = padding(header, width)
+        stdscr.attron(curses.color_pair(3))
+        stdscr.addstr(2, 0, header)
+        stdscr.attroff(curses.color_pair(3))
+
+    # result lists
+    start_height = 3
+    if highlight == -1:
+        highlight = 0
+    for i in range(0, cur_result_count):
+        row = last_rows[i]
+        ts = row[idx["last_visit_time"]] / 1000000 - 11644473600
+        format_str = "%Y-%m-%d %H:%M:%S"
+        ts_struct = time.localtime(ts)
+        time_str = "[" + time.strftime(format_str, ts_struct) + "] "
+
+        url = row[idx["url"]]
+        url = url + " " * (url_width - len(url))
+        url = padding(url, url_width - 1) + " "
+
+        title = row[idx["title"]]
+        title = padding(title, title_width - 1)
+
+        row_str = time_str + url + title
+        row_str = row_str + " " * (width - len(row_str))
+        row_str = padding(row_str, width)
+
+        if i == highlight:
+            stdscr.attron(curses.color_pair(2))
+            stdscr.addstr(start_height, 0, row_str)
+            stdscr.attroff(curses.color_pair(2))
+        else:
+            stdscr.attron(curses.color_pair(3))
+            stdscr.addstr(start_height, 0, row_str)
+            stdscr.attroff(curses.color_pair(3))
+        if start_height >= height - 1:
+            break
+        start_height = start_height + 1
+
+
+def do_action():
+    global k, last_rows, highlight
+    if k == 11:
+        url = last_rows[highlight][idx["url"]]
+        _ = os.system(
+            "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome {} > /tmp/chrotry".format(
+                url
+            )
+        )
+
+
+def draw_status_bar():
+    global width, stdscr, height
+    status_str = ""
+    stdscr.attron(curses.color_pair(2))
+    stdscr.addstr(height - 1, 0, status_str + " " * (width - len(status_str) - 30))
+    stdscr.attroff(curses.color_pair(2))
+
+
+def draw_window(_stdscr):
+    global cursor_x, cursor_y, k, stdscr, height, width
+    stdscr = _stdscr
+
+    # Clear and refresh the screen for a blank canvas
+    stdscr.clear()
+    stdscr.refresh()
+
+    # Start colors in curses
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_CYAN, -1)
+    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(3, curses.COLOR_WHITE, -1)
+
+    # Loop where k is the last character(^e) pressed
+    while k != 5:
+        # Initialization
+        stdscr.clear()
+        height, width = stdscr.getmaxyx()
+
+        # Draw panels
+        draw_search_bar()
+        draw_result_block()
+        # draw_status_bar()
+
+        # Refresh the screen
+        stdscr.refresh()
+
+        # Set cursor
+        stdscr.move(cursor_y, cursor_x)
+
+        # Action
+        do_action()
+
+        # Wait for next input
+        k = stdscr.getch()
+
+
+def main():
+    curses.wrapper(draw_window)
+
+
+if __name__ == "__main__":
+    main()
