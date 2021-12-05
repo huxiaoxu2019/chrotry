@@ -2,6 +2,10 @@
 
 Search all history of Chrome in terminal.
 
+
+## Demo
+![chrotry demo](https://github.com/huxiaoxu2019/chrotry/blob/main/assets/demo.gif)
+
 ## Usages
 
 - Move the Chrome history file to current directory by running `move_history.sh`
