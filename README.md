@@ -4,7 +4,7 @@ Search all history of Chrome in terminal.
 
 
 ## Demo
-![chrotry demo](https://github.com/huxiaoxu2019/chrotry/blob/huxiaoxu2019--20211205_update_readme/assets/demo.gif)
+![chrotry demo](https://github.com/huxiaoxu2019/chrotry/blob/main/assets/demo.gif)
 
 ## Usages
 
