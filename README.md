@@ -12,6 +12,6 @@ Search all history of Chrome in terminal.
 
 ### Shortcuts
 
-- CTRL + n, move down
-- CTRL + p, move up
+- CTRL + n, move one line down
+- CTRL + p, move one line up
 - CTRL + e, quit
