@@ -15,4 +15,3 @@ Search all history of Chrome in terminal.
 - CTRL + n, move down
 - CTRL + p, move up
 - CTRL + e, quit
-
