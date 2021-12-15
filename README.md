@@ -9,7 +9,7 @@ Search all history of Chrome in terminal.
 ## Usages
 
 - Move the Chrome history file to current directory by running `move_history.sh`
-- Rename `history_db_{timestamp}` file to the name `DB`
+- Rename `history_db` file to the name `DB`
 - [Optional] run.py script is to merge the newest history file to `DB` file
 - chrotry to search title, url in terminal
 
