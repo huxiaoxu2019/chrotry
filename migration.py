@@ -1,10 +1,11 @@
+#!/usr/local/bin/python
 import sys
 import sqlite3
 import subprocess
 
 DEBUG = False
-IN_DB = "DB"
-OUT_DB = sys.argv[1]
+IN_DB = sys.argv[1]
+OUT_DB = sys.argv[2]
 in_con = sqlite3.connect(IN_DB)
 out_con = sqlite3.connect(OUT_DB)
 in_cur = in_con.cursor()
