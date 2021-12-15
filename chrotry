@@ -1,5 +1,4 @@
 #!/Users/xu_hu/.pyenv/shims/python
-# TODO 1. Chinese 2. Render Last Line (Status)
 import os
 import time
 import curses
@@ -184,7 +183,7 @@ def do_action():
     if k == 11:
         url = last_rows[highlight][idx["url"]]
         _ = os.system(
-            "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \"{}\" > /tmp/chrotry".format(
+            '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome "{}" > /tmp/chrotry'.format(
                 url
             )
         )

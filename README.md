@@ -19,3 +19,8 @@ Search all history of Chrome in terminal.
 - CTRL + p, move one line up
 - CTRL + e, quit
 - CTRL + k, open url in chrome
+
+## Contribute
+
+- [Fix Bugs](https://github.com/huxiaoxu2019/chrotry/blob/main/BUG_LIST.md)
+- [Submit New Features](https://github.com/huxiaoxu2019/chrotry/blob/main/FEATURE_LIST.md)
